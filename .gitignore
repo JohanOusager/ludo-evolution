@@ -1,0 +1,10 @@
+
+game_history.npy
+
+game_video.mp4
+
+venv/
+
+__pycache__/
+
+.idea/
