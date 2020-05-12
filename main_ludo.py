@@ -1,26 +1,34 @@
 import ludopy
 import numpy as np
 import evo_ludo
+import time
 
+weighties = {
+                "out": 0,
+                "safe": 0,
+                "done": 0,
+                "kill": 0,
+                "globe": 0
+            #, "stacked": np.random.uniform(low=0, high=100) #or just same as globe
+            #, "danger": np.random.uniform(low=-100, high=0)
+            , "progress": 0
+            }
+
+player_0 = evo_ludo.Simple()
 player_1 = evo_ludo.Simple()
+player_2 = evo_ludo.Simple()
+player_3 = evo_ludo.Simple(weighties)
 
-g = ludopy.Game()
-there_is_a_winner = False
+for i in range(10):
+    start = time.time()
 
-while not there_is_a_winner:
-    (dice, move_pieces, player_pieces, enemy_pieces, player_is_a_winner, there_is_a_winner), player_i = g.get_observation()
+    wins = evo_ludo.play_matches(100, player_0, player_1, player_2, player_3)
 
-    if len(move_pieces):
-        if player_i == 1:
-            piece_to_move = player_1.play(dice, move_pieces, player_pieces, enemy_pieces)
-        else:
-            piece_to_move = move_pieces[np.random.randint(0, len(move_pieces))]
-    else:
-        piece_to_move = -1
+    end = time.time()
+    #print("Full game took ", end - start, " seconds")
+    print("Win distributiom of ", wins)
+#print("Saving history to numpy file")
+#g.save_hist(f"game_history.npy")
+#print("Saving game video")
+#g.save_hist_video(f"game_video.mp4")
 
-    _, _, _, _, _, there_is_a_winner = g.answer_observation(piece_to_move)
-
-print("Saving history to numpy file")
-g.save_hist(f"game_history.npy")
-print("Saving game video")
-g.save_hist_video(f"game_video.mp4")
