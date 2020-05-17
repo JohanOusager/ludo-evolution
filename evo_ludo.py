@@ -1,4 +1,6 @@
 import ludopy
+import pickle
+import time
 import numpy as np
 
 home = 0
@@ -25,7 +27,6 @@ class Simple:
             self.weights = weights
 
     def play(self, dice, move_pieces, player_pieces, enemy_pieces):
-        adjust = self.enemy_pieces_my_PoV(enemy_pieces)
         current_hvalues = np.array([self.heuristic(piece, enemy_pieces) for piece in player_pieces])
         future_hvalues = np.squeeze(np.array([self.heuristic(self.new_position(dice, piece, enemy_pieces), enemy_pieces)
                                    for piece in player_pieces]))
@@ -40,6 +41,21 @@ class Simple:
                 + self.done(position)*self.weights["done"] + self.kill(1, enemy_pieces)*self.weights["kill"]
                 + self.globe(position)*self.weights["globe"]+position*self.weights["progress"])
         else:
+            a = time.time_ns()
+            self.safe(position)*self.weights["safe"]
+            b = time.time_ns()
+            self.out(position)*self.weights["out"]
+            c = time.time_ns()
+            self.done(position)*self.weights["done"]
+            d = time.time_ns()
+            self.kill(position, enemy_pieces)*self.weights["kill"]
+            e = time.time_ns()
+            self.globe(position)*self.weights["globe"]
+            f = time.time_ns()
+            position*self.weights["progress"]
+            g = time.time_ns()
+            print("SET: \n", b-a, "\n", c-b, "\n", d-c, "\n", e-d, "\n", f-e, "\n", g-f, "\n", )
+
             return (self.safe(position)*self.weights["safe"] + self.out(position)*self.weights["out"]
                 + self.done(position)*self.weights["done"] + self.kill(position, enemy_pieces)*self.weights["kill"]
                 + self.globe(position)*self.weights["globe"]+position*self.weights["progress"])
@@ -142,12 +158,13 @@ class Evolutionary:
             raise ValueError("Evolutionary class must be initialized with a population size or an existing population")
         self.evaluation=np.zeros(self.population.shape[0])
 
-    def train(self, train_iterations):
+    def train(self, train_iterations=10, eval_iterations=10):
         for i in range(train_iterations):
             print("Gen ", i)
-            self.evaluation = self.evaluate(10)
+            self.save_population()
+            self.evaluation = self.evaluate(eval_iterations)
             self.population = self.breed()
-            self.population = self.mutate()
+            self.mutate()
             print("Best: ", np.max(self.evaluation))
 
     def evaluate(self, iterations=100):
@@ -209,6 +226,7 @@ class Evolutionary:
         for pair in parents:
             new_generation.append(make_kids(pair))
 
+        new_generation.flatten
         return new_generation[:self.population.shape[0]]
 
     def mutate(self, rate=0.05):
@@ -217,6 +235,10 @@ class Evolutionary:
             for key in individual.weights.keys():
                 if np.random.uniform(0, 1) <= rate:
                     individual.weights[key] *= np.random.uniform(0.5, 1.5)
+
+
+    def save_population(self):
+        with open('population' + time.strftime("%Y%m%d-%H%M%S"), 'wb') as f: pickle.dump(self.population, f)
 
 
 
@@ -258,5 +280,5 @@ def play_match(player_0, player_1, player_2, player_3):
 # value of being behind enemy/enemies
 
 #set up a heuristic (distance from goal or distance from goal - enemies distance from goal)
-evo = Evolutionary(population_size=10)
-evo.train(10)
+evo = Evolutionary(population_size=20)
+evo.train(100, 100)
